@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "s3c2410.h"
-
+v
 S3C2410 s3c2410;
 
 
