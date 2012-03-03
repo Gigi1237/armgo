@@ -1,0 +1,38 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ([2.67])
+AC_INIT(Armgo, 1.0.0, hutao.me@gmail.com)
+AM_INIT_AUTOMAKE(Armgo, 1.0.0)  
+AC_CONFIG_SRCDIR([armgo/armgo.c])
+AC_CONFIG_HEADERS([config.h])
+
+# Checks for programs.
+AC_PROG_CC
+
+# Checks for libraries.
+
+# Checks for header files.
+AC_CHECK_HEADERS([malloc.h stdlib.h string.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_INLINE
+
+# Checks for library functions.
+AC_FUNC_MALLOC
+AC_CHECK_FUNCS([memset])
+
+AC_OUTPUT([Makefile
+           boot/Makefile
+           common/Makefile
+           cpu/Makefile
+           elf/Makefile
+           memory/Makefile
+           s3c2410/Makefile
+           s3c2410/device/gpio/Makefile
+           s3c2410/device/uart/Makefile
+           s3c2410/device/watchdog/Makefile
+           s3c2410/device/sdram/Makefile
+           thread/Makefile
+           window/Makefile
+           armgo/Makefile])

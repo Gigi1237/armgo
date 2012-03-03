@@ -1,0 +1,1753 @@
+
+
+
+
+
+
+
+int bp;
+int inscount;
+int sss[256];
+int scount;
+
+INT32 rrr(INT32 address)
+{
+  return readMemoryWord(address);
+}
+
+
+void dumpCpu()
+{
+  inscount++;
+  //printf("ins count = %d\n", inscount);;
+  //if((cpu.pipeline32[0].address == 0x33f8ae40) || (bbb==1) )
+
+  if( (bp !=0 ) && ( inscount >= bp ) )
+  {
+    printf("ins count = %d\n", inscount);
+    printf("r0  = 0x%08x, r1  = 0x%08x, r2  = 0x%08x, r3  = 0x%08x\n", Reg(0),  Reg(1),  Reg(2),  Reg(3));
+    printf("r4  = 0x%08x, r5  = 0x%08x, r6  = 0x%08x, r7  = 0x%08x\n", Reg(4),  Reg(5),  Reg(6),  Reg(7));
+    printf("r8  = 0x%08x, r9  = 0x%08x, r10 = 0x%08x, r11 = 0x%08x\n", Reg(8),  Reg(9),  Reg(10), Reg(11));
+    printf("r12 = 0x%08x, r13 = 0x%08x, r14 = 0x%08x, r15 = 0x%08x\n", Reg(12), Reg(13), Reg(14), Reg(15));
+    printf("\n");
+
+
+  char str[100];
+  while(1)
+  {
+    fflush(stdin);
+    gets(str);
+
+      if(str[0] != 'm')
+        break;
+
+
+      INT32 address = arrayHexToDigit(str+1);
+
+    printf("[0x%08x] = 0x%08x\n", address + 0x00, readMemoryWord(address + 0x00));
+    printf("[0x%08x] = 0x%08x\n", address + 0x04, readMemoryWord(address + 0x04));
+    printf("[0x%08x] = 0x%08x\n", address + 0x08, readMemoryWord(address + 0x08));
+    printf("[0x%08x] = 0x%08x\n", address + 0x0c, readMemoryWord(address + 0x0c));
+    printf("[0x%08x] = 0x%08x\n", address + 0x10, readMemoryWord(address + 0x10));
+    printf("[0x%08x] = 0x%08x\n", address + 0x14, readMemoryWord(address + 0x14));
+    printf("[0x%08x] = 0x%08x\n", address + 0x18, readMemoryWord(address + 0x18));
+    printf("[0x%08x] = 0x%08x\n", address + 0x1c, readMemoryWord(address + 0x1c));
+  }
+  }
+}
+
+
+
+
+int exec2(BOOT * boot)
+{
+  INT32 temp;
+
+  /* Addressing mode 1 */
+  INT32 n, d, s, m, rn, rd, rs, rm, shift_imm, shift;
+  INT32 shifter_operand;
+  INT32 shifter_carry_out;
+
+  /* Addressing mode 2 */
+  INT32 address, INT32 offset_12;
+
+  /* Addressing mode 4 */
+  INT32 start_address, end_address, register_list;
+
+
+
+  //printf("Break Point: 0x");
+  //scanf("%x", &bp);
+  printf("Ins count: ");
+  scanf("%d", &bp);
+
+
+  int ii=0;
+  for(ii=0; ii<256; ++ii)
+    sss[ii] = 0xff;
+
+  if(boot->bootflash == NORFLASH)
+  {
+
+  }
+  else if(boot->bootflash == NANDFLASH)
+  {
+    writeReg(15, 0);
+  }
+  else
+  {
+  PROGRAM_ERROR;
+  return 1;
+  }
+
+  cpu.pipelineRefreshed = 0;
+
+  while(1)
+  {
+  //usleep(100);
+    if( (bp !=0 ) && ( inscount >= bp ) )
+    {
+      printf("At 0x%08x: %08x\n", (cpu.pipeline32[0].address), cpu.pipeline32[0].ins);
+    }
+    //getchar();
+
+    switch(TOPBITS(28))
+    {
+      case AL:
+      case NV:
+        temp = 1;
+        break;
+      case EQ:
+        temp = ZFLAG;
+        break;
+      case NE:
+        temp = !ZFLAG;
+        break;
+      case VS:
+        temp = VFLAG;
+        break;
+      case VC:
+        temp = !VFLAG;
+        break;
+      case MI:
+        temp = NFLAG;
+        break;
+      case PL:
+        temp = !NFLAG;
+        break;
+      case CS:
+        temp = CFLAG;
+        break;
+      case CC:
+        temp = !CFLAG;
+        break;
+      case HI:
+        temp = ( CFLAG && !ZFLAG );
+        break;
+      case LS:
+        temp = ( !CFLAG || ZFLAG );
+        break;
+      case GE:
+        temp = ( (!NFLAG && !VFLAG) || (NFLAG && VFLAG) );
+        break;
+      case LT:
+        temp = ( (NFLAG && !VFLAG) || (!NFLAG && VFLAG) );
+        break;
+      case GT:
+        temp = ( (!NFLAG && !VFLAG && !ZFLAG) || (NFLAG && VFLAG && !ZFLAG) );
+        break;
+      case LE:
+        temp = ( (NFLAG && !VFLAG) || (!NFLAG && VFLAG) || ZFLAG );
+        break;
+      default:
+        PROGRAM_ERROR;
+        break;
+    }
+
+    if(temp)
+    {
+      switch(BITS(27, 20))
+      {
+        case _00000000_:
+          EXE_AND;
+          EXE_LDRD;
+          EXE_MUL;
+          EXE_STRD;
+          EXE_STRH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00000001_:
+          EXE_AND;
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_MUL;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00000010_:
+          EXE_EOR;
+          EXE_LDRD;
+          EXE_MLA;
+          EXE_STRD;
+          EXE_STRH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00000011_:
+          EXE_EOR;
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_MLA;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00000100_:
+          EXE_LDRD;
+          EXE_STRD;
+          EXE_STRH;
+          EXE_SUB;
+          EXE_UMAAL;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00000101_:
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_SUB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00000110_:
+          EXE_LDRD;
+          EXE_RSB;
+          EXE_STRD;
+          EXE_STRH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00000111_:
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_RSB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00001000_:
+          EXE_ADD;
+          EXE_LDRD;
+          EXE_STRD;
+          EXE_STRH;
+          EXE_UMULL;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00001001_:
+          EXE_ADD;
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_UMULL;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00001010_:
+          EXE_ADC;
+          EXE_LDRD;
+          EXE_STRD;
+          EXE_STRH;
+          EXE_UMLAL;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00001011_:
+          EXE_ADC;
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_UMLAL;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00001100_:
+          EXE_LDRD;
+          EXE_SBC;
+          EXE_SMULL;
+          EXE_STRD;
+          EXE_STRH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00001101_:
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_SBC;
+          EXE_SMULL;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00001110_:
+          EXE_LDRD;
+          EXE_RSC;
+          EXE_SMLAL;
+          EXE_STRD;
+          EXE_STRH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00001111_:
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_RSC;
+          EXE_SMLAL;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00010000_:
+          EXE_CPS;
+          EXE_LDRD;
+          EXE_MRS;
+          EXE_QADD;
+          EXE_SETEND;
+          EXE_SMLAXY;
+          EXE_STRD;
+          EXE_STRH;
+          EXE_SWP;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00010001_:
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_TST;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00010010_:
+          EXE_BKPT;
+          EXE_BLX2;
+          EXE_BX;
+          EXE_BXJ;
+          EXE_LDRD;
+          EXE_MSR;
+          EXE_QSUB;
+          EXE_SMLAWY;
+          EXE_SMULWY;
+          EXE_STRD;
+          EXE_STRH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00010011_:
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_TEQ;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00010100_:
+          EXE_LDRD;
+          EXE_MRS;
+          EXE_QDADD;
+          EXE_SMLALXY;
+          EXE_STRD;
+          EXE_STRH;
+          EXE_SWPB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00010101_:
+          EXE_CMP;
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00010110_:
+          EXE_CLZ;
+          EXE_LDRD;
+          EXE_MSR;
+          EXE_QDSUB;
+          EXE_SMULXY;
+          EXE_STRD;
+          EXE_STRH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00010111_:
+          EXE_CMN;
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00011000_:
+          EXE_LDRD;
+          EXE_ORR;
+          EXE_STRD;
+          EXE_STREX;
+          EXE_STRH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00011001_:
+          EXE_LDREX;
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_ORR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00011010_:
+          EXE_CPY;
+          EXE_LDRD;
+          EXE_MOV;
+          EXE_STRD;
+          EXE_STRH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00011011_:
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_MOV;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00011100_:
+          EXE_BIC;
+          EXE_LDRD;
+          EXE_STRD;
+          EXE_STRH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00011101_:
+          EXE_BIC;
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00011110_:
+          EXE_LDRD;
+          EXE_MVN;
+          EXE_STRD;
+          EXE_STRH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00011111_:
+          EXE_LDRH;
+          EXE_LDRSB;
+          EXE_LDRSH;
+          EXE_MVN;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00100000_:
+          EXE_AND;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00100001_:
+          EXE_AND;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00100010_:
+          EXE_EOR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00100011_:
+          EXE_EOR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00100100_:
+          EXE_SUB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00100101_:
+          EXE_SUB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00100110_:
+          EXE_RSB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00100111_:
+          EXE_RSB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00101000_:
+          EXE_ADD;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00101001_:
+          EXE_ADD;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00101010_:
+          EXE_ADC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00101011_:
+          EXE_ADC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00101100_:
+          EXE_SBC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00101101_:
+          EXE_SBC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00101110_:
+          EXE_RSC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00101111_:
+          EXE_RSC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00110000_:
+          INSTNOTSUPPORT;
+          break;
+
+        case _00110001_:
+          EXE_TST;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00110010_:
+          EXE_MSR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00110011_:
+          EXE_TEQ;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00110100_:
+          INSTNOTSUPPORT;
+          break;
+
+        case _00110101_:
+          EXE_CMP;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00110110_:
+          EXE_MSR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00110111_:
+          EXE_CMN;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00111000_:
+          EXE_ORR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00111001_:
+          EXE_ORR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00111010_:
+          EXE_MOV;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00111011_:
+          EXE_MOV;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00111100_:
+          EXE_BIC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00111101_:
+          EXE_BIC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00111110_:
+          EXE_MVN;
+          INSTNOTSUPPORT;
+          break;
+
+        case _00111111_:
+          EXE_MVN;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01000000_:
+          EXE_STR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01000001_:
+          EXE_LDR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01000010_:
+          EXE_STR;
+          EXE_STRT;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01000011_:
+          EXE_LDR;
+          EXE_LDRT;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01000100_:
+          EXE_STRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01000101_:
+          EXE_LDRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01000110_:
+          EXE_STRB;
+          EXE_STRBT;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01000111_:
+          EXE_LDRB;
+          EXE_LDRBT;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01001000_:
+          EXE_STR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01001001_:
+          EXE_LDR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01001010_:
+          EXE_STR;
+          EXE_STRT;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01001011_:
+          EXE_LDR;
+          EXE_LDRT;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01001100_:
+          EXE_STRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01001101_:
+          EXE_LDRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01001110_:
+          EXE_STRB;
+          EXE_STRBT;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01001111_:
+          EXE_LDRB;
+          EXE_LDRBT;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01010000_:
+          EXE_STR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01010001_:
+          EXE_LDR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01010010_:
+          EXE_STR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01010011_:
+          EXE_LDR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01010100_:
+          EXE_STRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01010101_:
+          EXE_LDRB;
+          EXE_PLD;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01010110_:
+          EXE_STRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01010111_:
+          EXE_LDRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01011000_:
+          EXE_STR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01011001_:
+          EXE_LDR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01011010_:
+          EXE_STR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01011011_:
+          EXE_LDR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01011100_:
+          EXE_STRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01011101_:
+          EXE_LDRB;
+          EXE_PLD;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01011110_:
+          EXE_STRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01011111_:
+          EXE_LDRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01100000_:
+          EXE_STR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01100001_:
+          EXE_LDR;
+          EXE_SADD16;
+          EXE_SADD8;
+          EXE_SADDSUBX;
+          EXE_SSUB16;
+          EXE_SSUB8;
+          EXE_SSUBADDX;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01100010_:
+          EXE_QADD16;
+          EXE_QADD8;
+          EXE_QADDSUBX;
+          EXE_QSUB16;
+          EXE_QSUB8;
+          EXE_QSUBADDX;
+          EXE_STR;
+          EXE_STRT;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01100011_:
+          EXE_LDR;
+          EXE_LDRT;
+          EXE_SHADD16;
+          EXE_SHADD8;
+          EXE_SHADDSUBX;
+          EXE_SHSUB16;
+          EXE_SHSUB8;
+          EXE_SHSUBADDX;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01100100_:
+          EXE_STRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01100101_:
+          EXE_LDRB;
+          EXE_UADD16;
+          EXE_UADD8;
+          EXE_UADDSUBX;
+          EXE_USUB16;
+          EXE_USUB8;
+          EXE_USUBADDX;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01100110_:
+          EXE_STRB;
+          EXE_STRBT;
+          EXE_UQADD16;
+          EXE_UQADD8;
+          EXE_UQADDSUBX;
+          EXE_UQSUB16;
+          EXE_UQSUB8;
+          EXE_UQSUBADDX;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01100111_:
+          EXE_LDRB;
+          EXE_LDRBT;
+          EXE_UHADD16;
+          EXE_UHADD8;
+          EXE_UHADDSUBX;
+          EXE_UHSUB16;
+          EXE_UHSUB8;
+          EXE_UHSUBADDX;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01101000_:
+          EXE_PKHBT;
+          EXE_PKHTB;
+          EXE_SEL;
+          EXE_STR;
+          EXE_SXTAB16;
+          EXE_SXTB16;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01101001_:
+          EXE_LDR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01101010_:
+          EXE_SSAT;
+          EXE_SSAT16;
+          EXE_STR;
+          EXE_STRT;
+          EXE_SXTAB;
+          EXE_SXTB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01101011_:
+          EXE_LDR;
+          EXE_LDRT;
+          EXE_REV;
+          EXE_REV16;
+          EXE_SSAT;
+          EXE_SXTAH;
+          EXE_SXTH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01101100_:
+          EXE_STRB;
+          EXE_UXTAB16;
+          EXE_UXTB16;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01101101_:
+          EXE_LDRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01101110_:
+          EXE_STRB;
+          EXE_STRBT;
+          EXE_USAT;
+          EXE_USAT16;
+          EXE_UXTAB;
+          EXE_UXTB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01101111_:
+          EXE_LDRB;
+          EXE_LDRBT;
+          EXE_REVSH;
+          EXE_USAT;
+          EXE_UXTAH;
+          EXE_UXTH;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01110000_:
+          EXE_SMLAD;
+          EXE_SMLSD;
+          EXE_SMUAD;
+          EXE_SMUSD;
+          EXE_STR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01110001_:
+          EXE_LDR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01110010_:
+          EXE_STR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01110011_:
+          EXE_LDR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01110100_:
+          EXE_SMLALD;
+          EXE_SMLSLD;
+          EXE_STRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01110101_:
+          EXE_LDRB;
+          EXE_PLD;
+          EXE_SMMLA;
+          EXE_SMMLS;
+          EXE_SMMUL;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01110110_:
+          EXE_STRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01110111_:
+          EXE_LDRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01111000_:
+          EXE_STR;
+          EXE_USAD8;
+          EXE_USADA8;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01111001_:
+          EXE_LDR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01111010_:
+          EXE_STR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01111011_:
+          EXE_LDR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01111100_:
+          EXE_STRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01111101_:
+          EXE_LDRB;
+          EXE_PLD;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01111110_:
+          EXE_STRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _01111111_:
+          EXE_LDRB;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10000000_:
+          EXE_STM1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10000001_:
+          EXE_LDM1;
+          EXE_RFE;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10000010_:
+          EXE_STM1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10000011_:
+          EXE_LDM1;
+          EXE_RFE;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10000100_:
+          EXE_SRS;
+          EXE_STM2;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10000101_:
+          EXE_LDM2;
+          EXE_LDM3;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10000110_:
+          EXE_SRS;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10000111_:
+          EXE_LDM3;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10001000_:
+          EXE_STM1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10001001_:
+          EXE_LDM1;
+          EXE_RFE;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10001010_:
+          EXE_STM1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10001011_:
+          EXE_LDM1;
+          EXE_RFE;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10001100_:
+          EXE_SRS;
+          EXE_STM2;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10001101_:
+          EXE_LDM2;
+          EXE_LDM3;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10001110_:
+          EXE_SRS;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10001111_:
+          EXE_LDM3;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10010000_:
+          EXE_STM1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10010001_:
+          EXE_LDM1;
+          EXE_RFE;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10010010_:
+          EXE_STM1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10010011_:
+          EXE_LDM1;
+          EXE_RFE;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10010100_:
+          EXE_SRS;
+          EXE_STM2;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10010101_:
+          EXE_LDM2;
+          EXE_LDM3;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10010110_:
+          EXE_SRS;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10010111_:
+          EXE_LDM3;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10011000_:
+          EXE_STM1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10011001_:
+          EXE_LDM1;
+          EXE_RFE;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10011010_:
+          EXE_STM1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10011011_:
+          EXE_LDM1;
+          EXE_RFE;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10011100_:
+          EXE_SRS;
+          EXE_STM2;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10011101_:
+          EXE_LDM2;
+          EXE_LDM3;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10011110_:
+          EXE_SRS;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10011111_:
+          EXE_LDM3;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10100000_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10100001_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10100010_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10100011_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10100100_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10100101_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10100110_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10100111_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10101000_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10101001_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10101010_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10101011_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10101100_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10101101_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10101110_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10101111_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10110000_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10110001_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10110010_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10110011_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10110100_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10110101_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10110110_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10110111_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10111000_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10111001_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10111010_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10111011_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10111100_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10111101_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10111110_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _10111111_:
+          EXE_BBL;
+          EXE_BLX1;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11000000_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11000001_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11000010_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11000011_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11000100_:
+          EXE_MCRR;
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11000101_:
+          EXE_LDC;
+          EXE_MRRC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11000110_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11000111_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11001000_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11001001_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11001010_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11001011_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11001100_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11001101_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11001110_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11001111_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11010000_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11010001_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11010010_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11010011_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11010100_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11010101_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11010110_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11010111_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11011000_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11011001_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11011010_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11011011_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11011100_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11011101_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11011110_:
+          EXE_STC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11011111_:
+          EXE_LDC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11100000_:
+          EXE_CDP;
+          EXE_MCR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11100001_:
+          EXE_CDP;
+          EXE_MRC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11100010_:
+          EXE_CDP;
+          EXE_MCR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11100011_:
+          EXE_CDP;
+          EXE_MRC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11100100_:
+          EXE_CDP;
+          EXE_MCR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11100101_:
+          EXE_CDP;
+          EXE_MRC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11100110_:
+          EXE_CDP;
+          EXE_MCR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11100111_:
+          EXE_CDP;
+          EXE_MRC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11101000_:
+          EXE_CDP;
+          EXE_MCR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11101001_:
+          EXE_CDP;
+          EXE_MRC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11101010_:
+          EXE_CDP;
+          EXE_MCR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11101011_:
+          EXE_CDP;
+          EXE_MRC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11101100_:
+          EXE_CDP;
+          EXE_MCR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11101101_:
+          EXE_CDP;
+          EXE_MRC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11101110_:
+          EXE_CDP;
+          EXE_MCR;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11101111_:
+          EXE_CDP;
+          EXE_MRC;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11110000_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11110001_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11110010_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11110011_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11110100_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11110101_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11110110_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11110111_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11111000_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11111001_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11111010_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11111011_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11111100_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11111101_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11111110_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        case _11111111_:
+          EXE_SWI;
+          INSTNOTSUPPORT;
+          break;
+
+        default:
+          PROGRAM_ERROR;
+          break;
+      }
+    }
+    if(!cpu.pipelineRefreshed)
+    {
+      NEXT_PIPELINE;
+    }
+    else
+    {
+      cpu.pipelineRefreshed = 0;
+    }
+    dumpCpu();
+  }
+
+  return 0;
+}
