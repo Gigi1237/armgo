@@ -1,0 +1,40 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ([2.67])
+AC_INIT([FULL-PACKAGE-NAME], [VERSION], [BUG-REPORT-ADDRESS])
+AC_CONFIG_SRCDIR([config.h.in])
+AC_CONFIG_HEADERS([config.h])
+
+# Checks for programs.
+AC_PROG_CC
+
+# Checks for libraries.
+# FIXME: Replace `main' with a function in `-lpthread':
+AC_CHECK_LIB([pthread], [main])
+
+# Checks for header files.
+AC_CHECK_HEADERS([malloc.h stdlib.h string.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_INLINE
+
+# Checks for library functions.
+AC_FUNC_MALLOC
+AC_CHECK_FUNCS([memset pow])
+
+AC_CONFIG_FILES([Makefile
+                 armgo/Makefile
+                 boot/Makefile
+                 common/Makefile
+                 cpu/Makefile
+                 elf/Makefile
+                 memory/Makefile
+                 s3c2410/Makefile
+                 s3c2410/device/gpio/Makefile
+                 s3c2410/device/sdram/Makefile
+                 s3c2410/device/uart/Makefile
+                 s3c2410/device/watchdog/Makefile
+                 thread/Makefile
+                 window/Makefile])
+AC_OUTPUT

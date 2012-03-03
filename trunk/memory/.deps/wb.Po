@@ -1,0 +1,16 @@
+wb.o: wb.c wb.h ../common/common.h memory.h ../cpu/cpu.h ../boot/boot.h \
+ tlb.h cache.h
+
+wb.h:
+
+../common/common.h:
+
+memory.h:
+
+../cpu/cpu.h:
+
+../boot/boot.h:
+
+tlb.h:
+
+cache.h:
